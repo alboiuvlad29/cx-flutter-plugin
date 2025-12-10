@@ -375,6 +375,7 @@ class NetworkRequestContext {
       responseContentLength: switch (json['response_content_length']) {
         String s => s,
         int i => i.toString(),
+        null => null,
         _ => '0'
       },
       duration:
