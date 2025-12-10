@@ -346,7 +346,7 @@ class NetworkRequestContext {
   String? statusText;
 
   @JsonKey(name: 'response_content_length')
-  int? responseContentLength;
+  String? responseContentLength;
 
   int duration;
 
@@ -372,7 +372,11 @@ class NetworkRequestContext {
       host: json['host'] as String?,
       schema: json['schema'] as String?,
       statusText: json['status_text'] as String?,
-      responseContentLength: json['response_content_length'] as int?,
+      responseContentLength: switch (json['response_content_length']) {
+        String s => s,
+        int i => i.toString(),
+        _ => '0'
+      },
       duration:
           json['duration'] is String ? int.tryParse(json['duration'] as String) ?? 0 : json['duration'] as int? ?? 0,
     );
