@@ -201,6 +201,20 @@ Map<String, dynamic> _$MeasurementContextToJson(MeasurementContext instance) =>
       'value': instance.value,
     };
 
+InteractionContext _$InteractionContextFromJson(Map<String, dynamic> json) =>
+    InteractionContext(
+      elementId: json['element_id'] as String?,
+      eventName: json['event_name'] as String?,
+      attributes: json['attributes'] as Map<String, dynamic>?,
+    );
+
+Map<String, dynamic> _$InteractionContextToJson(InteractionContext instance) =>
+    <String, dynamic>{
+      'element_id': instance.elementId,
+      'event_name': instance.eventName,
+      'attributes': instance.attributes,
+    };
+
 NetworkRequestContext _$NetworkRequestContextFromJson(
         Map<String, dynamic> json) =>
     NetworkRequestContext(
@@ -211,7 +225,7 @@ NetworkRequestContext _$NetworkRequestContextFromJson(
       host: json['host'] as String?,
       schema: json['schema'] as String?,
       statusText: json['status_text'] as String?,
-      responseContentLength: json['response_content_length'] as String?,
+      responseContentLength: (json['response_content_length'] as num?)?.toInt(),
       duration: (json['duration'] as num?)?.toInt() ?? 0,
     );
 
@@ -338,57 +352,59 @@ Map<String, dynamic> _$SpanStatusToJson(SpanStatus instance) =>
 
 CxRumEvent _$CxRumEventFromJson(Map<String, dynamic> json) => CxRumEvent(
       timestamp: (json['timestamp'] as num).toInt(),
-      mobileSdk: json['mobileSdk'] == null
+      mobileSdk: json['mobile_sdk'] == null
           ? null
-          : MobileSdk.fromJson(json['mobileSdk'] as Map<String, dynamic>),
+          : MobileSdk.fromJson(json['mobile_sdk'] as Map<String, dynamic>),
       platform: json['platform'] as String,
-      versionMetadata: json['versionMetadata'] == null
+      versionMetadata: json['version_metadata'] == null
           ? null
           : VersionMetaData.fromJson(
-              json['versionMetadata'] as Map<String, dynamic>),
-      sessionContext: json['sessionContext'] == null
+              json['version_metadata'] as Map<String, dynamic>),
+      sessionContext: json['session_context'] == null
           ? null
           : SessionContext.fromJson(
-              json['sessionContext'] as Map<String, dynamic>),
-      deviceContext: json['deviceContext'] == null
+              json['session_context'] as Map<String, dynamic>),
+      deviceContext: json['device_context'] == null
           ? null
           : DeviceContext.fromJson(
-              json['deviceContext'] as Map<String, dynamic>),
-      deviceState: json['deviceState'] == null
+              json['device_context'] as Map<String, dynamic>),
+      deviceState: json['device_state'] == null
           ? null
-          : DeviceState.fromJson(json['deviceState'] as Map<String, dynamic>),
-      viewContext: json['viewContext'] == null
+          : DeviceState.fromJson(json['device_state'] as Map<String, dynamic>),
+      viewContext: json['view_context'] == null
           ? null
-          : ViewContext.fromJson(json['viewContext'] as Map<String, dynamic>),
-      eventContext: json['eventContext'] == null
+          : ViewContext.fromJson(json['view_context'] as Map<String, dynamic>),
+      eventContext: json['event_context'] == null
           ? null
-          : EventContext.fromJson(json['eventContext'] as Map<String, dynamic>),
-      errorContext: json['errorContext'] == null
+          : EventContext.fromJson(
+              json['event_context'] as Map<String, dynamic>),
+      errorContext: json['error_context'] == null
           ? null
-          : ErrorContext.fromJson(json['errorContext'] as Map<String, dynamic>),
+          : ErrorContext.fromJson(
+              json['error_context'] as Map<String, dynamic>),
       interactionContext: json['interaction_context'] == null
           ? null
           : InteractionContext.fromJson(
               json['interaction_context'] as Map<String, dynamic>),
-      logContext: json['logContext'] == null
+      logContext: json['log_context'] == null
           ? null
-          : LogContext.fromJson(json['logContext'] as Map<String, dynamic>),
-      networkRequestContext: json['networkRequestContext'] == null
+          : LogContext.fromJson(json['log_context'] as Map<String, dynamic>),
+      networkRequestContext: json['network_request_context'] == null
           ? null
           : NetworkRequestContext.fromJson(
-              json['networkRequestContext'] as Map<String, dynamic>),
-      snapshotContext: json['snapshotContext'] == null
+              json['network_request_context'] as Map<String, dynamic>),
+      snapshotContext: json['snapshot_context'] == null
           ? null
           : SnapshotContext.fromJson(
-              json['snapshotContext'] as Map<String, dynamic>),
-      mobileVitalsContext: json['mobileVitalsContext'] == null
+              json['snapshot_context'] as Map<String, dynamic>),
+      mobileVitalsContext: json['mobile_vitals_context'] == null
           ? null
           : MobileVitalsContext.fromJson(
-              json['mobileVitalsContext'] as Map<String, dynamic>),
-      lifeCycleContext: json['lifeCycleContext'] == null
+              json['mobile_vitals_context'] as Map<String, dynamic>),
+      lifeCycleContext: json['life_cycle_context'] == null
           ? null
           : LifeCycleContext.fromJson(
-              json['lifeCycleContext'] as Map<String, dynamic>),
+              json['life_cycle_context'] as Map<String, dynamic>),
       measurementContext: json['measurement_context'] == null
           ? null
           : MeasurementContext.fromJson(
@@ -398,93 +414,95 @@ CxRumEvent _$CxRumEventFromJson(Map<String, dynamic> json) => CxRumEvent(
       traceId: json['traceId'] as String,
       environment: json['environment'] as String,
       isSnapshotEvent: json['isSnapshotEvent'] as bool?,
-      instrumentationData: json['instrumentationData'] == null
+      instrumentationData: json['instrumentation_data'] == null
           ? null
           : InstrumentationData.fromJson(
-              json['instrumentationData'] as Map<String, dynamic>),
+              json['instrumentation_data'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$CxRumEventToJson(CxRumEvent instance) =>
     <String, dynamic>{
       'timestamp': instance.timestamp,
-      'mobileSdk': instance.mobileSdk,
+      'mobile_sdk': instance.mobileSdk,
       'platform': instance.platform,
-      'versionMetadata': instance.versionMetadata,
-      'sessionContext': instance.sessionContext,
-      'deviceContext': instance.deviceContext,
-      'deviceState': instance.deviceState,
-      'viewContext': instance.viewContext,
-      'eventContext': instance.eventContext,
-      'errorContext': instance.errorContext,
+      'version_metadata': instance.versionMetadata,
+      'session_context': instance.sessionContext,
+      'device_context': instance.deviceContext,
+      'device_state': instance.deviceState,
+      'view_context': instance.viewContext,
+      'event_context': instance.eventContext,
+      'error_context': instance.errorContext,
       'interaction_context': instance.interactionContext,
-      'logContext': instance.logContext,
-      'networkRequestContext': instance.networkRequestContext,
-      'snapshotContext': instance.snapshotContext,
-      'mobileVitalsContext': instance.mobileVitalsContext,
-      'lifeCycleContext': instance.lifeCycleContext,
+      'log_context': instance.logContext,
+      'network_request_context': instance.networkRequestContext,
+      'snapshot_context': instance.snapshotContext,
+      'mobile_vitals_context': instance.mobileVitalsContext,
+      'life_cycle_context': instance.lifeCycleContext,
       'measurement_context': instance.measurementContext,
       'labels': instance.labels,
       'spanId': instance.spanId,
       'traceId': instance.traceId,
       'environment': instance.environment,
       'isSnapshotEvent': instance.isSnapshotEvent,
-      'instrumentationData': instance.instrumentationData,
+      'instrumentation_data': instance.instrumentationData,
     };
 
 EditableCxRumEvent _$EditableCxRumEventFromJson(Map<String, dynamic> json) =>
     EditableCxRumEvent(
       platform: json['platform'] as String,
-      versionMetadata: json['versionMetadata'] == null
+      versionMetadata: json['version_metadata'] == null
           ? null
           : VersionMetaData.fromJson(
-              json['versionMetadata'] as Map<String, dynamic>),
+              json['version_metadata'] as Map<String, dynamic>),
       timestamp: (json['timestamp'] as num).toInt(),
-      mobileSdk: json['mobileSdk'] == null
+      mobileSdk: json['mobile_sdk'] == null
           ? null
-          : MobileSdk.fromJson(json['mobileSdk'] as Map<String, dynamic>),
-      sessionContext: json['sessionContext'] == null
+          : MobileSdk.fromJson(json['mobile_sdk'] as Map<String, dynamic>),
+      sessionContext: json['session_context'] == null
           ? null
           : SessionContext.fromJson(
-              json['sessionContext'] as Map<String, dynamic>),
-      deviceContext: json['deviceContext'] == null
+              json['session_context'] as Map<String, dynamic>),
+      deviceContext: json['device_context'] == null
           ? null
           : DeviceContext.fromJson(
-              json['deviceContext'] as Map<String, dynamic>),
-      deviceState: json['deviceState'] == null
+              json['device_context'] as Map<String, dynamic>),
+      deviceState: json['device_state'] == null
           ? null
-          : DeviceState.fromJson(json['deviceState'] as Map<String, dynamic>),
-      viewContext: json['viewContext'] == null
+          : DeviceState.fromJson(json['device_state'] as Map<String, dynamic>),
+      viewContext: json['view_context'] == null
           ? null
-          : ViewContext.fromJson(json['viewContext'] as Map<String, dynamic>),
-      eventContext: json['eventContext'] == null
+          : ViewContext.fromJson(json['view_context'] as Map<String, dynamic>),
+      eventContext: json['event_context'] == null
           ? null
-          : EventContext.fromJson(json['eventContext'] as Map<String, dynamic>),
-      errorContext: json['errorContext'] == null
+          : EventContext.fromJson(
+              json['event_context'] as Map<String, dynamic>),
+      errorContext: json['error_context'] == null
           ? null
-          : ErrorContext.fromJson(json['errorContext'] as Map<String, dynamic>),
+          : ErrorContext.fromJson(
+              json['error_context'] as Map<String, dynamic>),
       interactionContext: json['interaction_context'] == null
           ? null
           : InteractionContext.fromJson(
               json['interaction_context'] as Map<String, dynamic>),
-      logContext: json['logContext'] == null
+      logContext: json['log_context'] == null
           ? null
-          : LogContext.fromJson(json['logContext'] as Map<String, dynamic>),
-      networkRequestContext: json['networkRequestContext'] == null
+          : LogContext.fromJson(json['log_context'] as Map<String, dynamic>),
+      networkRequestContext: json['network_request_context'] == null
           ? null
           : NetworkRequestContext.fromJson(
-              json['networkRequestContext'] as Map<String, dynamic>),
-      snapshotContext: json['snapshotContext'] == null
+              json['network_request_context'] as Map<String, dynamic>),
+      snapshotContext: json['snapshot_context'] == null
           ? null
           : SnapshotContext.fromJson(
-              json['snapshotContext'] as Map<String, dynamic>),
-      mobileVitalsContext: json['mobileVitalsContext'] == null
+              json['snapshot_context'] as Map<String, dynamic>),
+      mobileVitalsContext: json['mobile_vitals_context'] == null
           ? null
           : MobileVitalsContext.fromJson(
-              json['mobileVitalsContext'] as Map<String, dynamic>),
-      lifeCycleContext: json['lifeCycleContext'] == null
+              json['mobile_vitals_context'] as Map<String, dynamic>),
+      lifeCycleContext: json['life_cycle_context'] == null
           ? null
           : LifeCycleContext.fromJson(
-              json['lifeCycleContext'] as Map<String, dynamic>),
+              json['life_cycle_context'] as Map<String, dynamic>),
       measurementContext: json['measurement_context'] == null
           ? null
           : MeasurementContext.fromJson(
@@ -494,35 +512,35 @@ EditableCxRumEvent _$EditableCxRumEventFromJson(Map<String, dynamic> json) =>
       traceId: json['traceId'] as String,
       environment: json['environment'] as String,
       isSnapshotEvent: json['isSnapshotEvent'] as bool?,
-      instrumentationData: json['instrumentationData'] == null
+      instrumentationData: json['instrumentation_data'] == null
           ? null
           : InstrumentationData.fromJson(
-              json['instrumentationData'] as Map<String, dynamic>),
+              json['instrumentation_data'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$EditableCxRumEventToJson(EditableCxRumEvent instance) =>
     <String, dynamic>{
       'timestamp': instance.timestamp,
-      'mobileSdk': instance.mobileSdk,
+      'mobile_sdk': instance.mobileSdk,
       'platform': instance.platform,
-      'versionMetadata': instance.versionMetadata,
-      'sessionContext': instance.sessionContext,
-      'deviceContext': instance.deviceContext,
-      'deviceState': instance.deviceState,
-      'viewContext': instance.viewContext,
-      'eventContext': instance.eventContext,
-      'errorContext': instance.errorContext,
+      'version_metadata': instance.versionMetadata,
+      'session_context': instance.sessionContext,
+      'device_context': instance.deviceContext,
+      'device_state': instance.deviceState,
+      'view_context': instance.viewContext,
+      'event_context': instance.eventContext,
+      'error_context': instance.errorContext,
       'interaction_context': instance.interactionContext,
-      'logContext': instance.logContext,
-      'networkRequestContext': instance.networkRequestContext,
-      'snapshotContext': instance.snapshotContext,
-      'mobileVitalsContext': instance.mobileVitalsContext,
-      'lifeCycleContext': instance.lifeCycleContext,
+      'log_context': instance.logContext,
+      'network_request_context': instance.networkRequestContext,
+      'snapshot_context': instance.snapshotContext,
+      'mobile_vitals_context': instance.mobileVitalsContext,
+      'life_cycle_context': instance.lifeCycleContext,
       'measurement_context': instance.measurementContext,
       'labels': instance.labels,
       'spanId': instance.spanId,
       'traceId': instance.traceId,
       'environment': instance.environment,
       'isSnapshotEvent': instance.isSnapshotEvent,
-      'instrumentationData': instance.instrumentationData,
+      'instrumentation_data': instance.instrumentationData,
     };
