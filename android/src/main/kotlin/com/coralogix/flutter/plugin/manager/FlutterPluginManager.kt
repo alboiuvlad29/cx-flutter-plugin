@@ -70,8 +70,8 @@ internal class FlutterPluginManager(
             sessionSampleRate = optionsDetails["sdkSampler"] as? Int ?: 100,
             fpsSamplingSeconds = optionsDetails["mobileVitalsFPSSamplingRate"] as? Long ?: 300,
             proxyUrl = optionsDetails["proxyUrl"] as? String,
-            debug = optionsDetails["debug"] as? Boolean ?: false,
-            beforeSendCallback = ::beforeSendHandler
+            debug = optionsDetails["debug"] as? Boolean ?: false
+//            beforeSendCallback = ::beforeSendHandler
         )
 
         CoralogixRum.initialize(application, options, Framework.Flutter)
