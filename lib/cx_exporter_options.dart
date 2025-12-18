@@ -45,8 +45,10 @@ class CXExporterOptions {
   // Determines whether the SDK should collect the user's IP address and corresponding geolocation data. Defaults to true.
   final bool collectIPData;
 
-  // Enable event access and modification before sending to Coralogix, supporting content modification, and event discarding. 
-  final BeforeSendResult Function(EditableCxRumEvent event) beforeSend;
+  // Enable event access and modification before sending to Coralogix, supporting content modification, and event discarding.
+  // When null, logs are sent directly without Flutter round-trip (better performance).
+  // When provided, events are processed through Flutter before sending.
+  final BeforeSendResult Function(EditableCxRumEvent event)? beforeSend;
 
   // When set to `false`, disables Coralogix's automatic method swizzling.
   // Swizzling is used to auto-instrument various system behaviors (e.g., view controller lifecycle,
@@ -74,7 +76,7 @@ class CXExporterOptions {
     this.instrumentations,
     this.collectIPData = true,
     this.debug = false,
-    this.beforeSend = _defaultBeforeSend,
+    this.beforeSend,
     required this.enableSwizzling,
     this.traceParentInHeader,
   });
@@ -101,5 +103,3 @@ class CXExporterOptions {
     };
   }
 }
-
-BeforeSendResult _defaultBeforeSend(EditableCxRumEvent event) => event;

@@ -97,18 +97,25 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         do {
-            // Create beforeSendCallback only if parameter["beforeSend"] is not null
-            let beforeSendCallBack: (([[String: Any]]) -> Void)? =
+            // Check if a custom beforeSend is provided
+            let hasCustomBeforeSend = parameters["hasCustomBeforeSend"] as? Bool ?? false
+            
+            // Create beforeSendCallback only if a custom beforeSend is provided
+            let beforeSendCallBack: (([[String: Any]]) -> Void)? = hasCustomBeforeSend ?
                 { [weak self] (event: [[String: Any]]) -> Void in
                     print("event: \(event)")
                     let safePayload = self?.makeJSONSafe(event)
                     DispatchQueue.main.async {
                         self?.eventSink?(safePayload)
                     }
-                  }
+                  } : nil
 
             let options = try self.toCoralogixOptions(parameter: parameters)
-//            options.beforeSendCallBack = beforeSendCallBack
+            // Only set beforeSendCallBack when a custom beforeSend is provided
+            // When using default beforeSend, native SDK sends logs directly (no performance overhead)
+            if hasCustomBeforeSend {
+                options.beforeSendCallBack = beforeSendCallBack
+            }
             let version = parameters["version"] as? String ?? ""
             self.coralogixRum = CoralogixRum(options: options, sdkFramework: .flutter(version: version))
             result("initialize success")

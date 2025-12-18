@@ -32,6 +32,19 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
     // Remove beforeSend from arguments as it cannot be serialized
     arguments.remove('beforeSend');
 
+    // Check if beforeSend is provided (nullable - when null, native SDK sends directly)
+    final hasBeforeSend = options.beforeSend != null;
+    arguments['hasCustomBeforeSend'] = hasBeforeSend;
+
+    // Store the beforeSend callback (use default pass-through if null)
+    _beforeSendCallback = options.beforeSend ?? ((event) => event);
+    
+    // Start listening to events BEFORE initializing native SDK to ensure event sink is ready
+    // when callbacks are triggered. This prevents events from being dropped during initialization.
+    if (hasBeforeSend) {
+      _startListening();
+    }
+
     if (arguments['instrumentations'] is Map &&
         arguments['instrumentations'][CXInstrumentationType.mobileVitals.value] == true) {
       try {
@@ -43,11 +56,8 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
       }
     }
 
+    // Initialize native SDK after event listener is ready
     final version = await methodChannel.invokeMethod<String>('initSdk', arguments);
-
-    // If Dart-side beforeSend callback is provided, register it
-    _beforeSendCallback = options.beforeSend;
-    // _startListening();
 
     return version;
   }
