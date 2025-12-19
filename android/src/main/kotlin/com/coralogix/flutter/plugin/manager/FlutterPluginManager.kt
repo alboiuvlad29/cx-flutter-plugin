@@ -55,6 +55,9 @@ internal class FlutterPluginManager(
             return
         }
 
+        // Check if a custom beforeSend is provided
+        val hasCustomBeforeSend = optionsDetails["hasCustomBeforeSend"] as? Boolean ?: false
+        
         val options = CoralogixOptions(
             applicationName = optionsDetails["application"] as? String ?: "",
             coralogixDomain = domain,
@@ -70,8 +73,10 @@ internal class FlutterPluginManager(
             sessionSampleRate = optionsDetails["sdkSampler"] as? Int ?: 100,
             fpsSamplingSeconds = optionsDetails["mobileVitalsFPSSamplingRate"] as? Long ?: 300,
             proxyUrl = optionsDetails["proxyUrl"] as? String,
-            debug = optionsDetails["debug"] as? Boolean ?: false
-//            beforeSendCallback = ::beforeSendHandler
+            debug = optionsDetails["debug"] as? Boolean ?: false,
+            // Only set beforeSendCallback when a custom beforeSend is provided
+            // When using default beforeSend, native SDK sends logs directly (no performance overhead)
+            beforeSendCallback = if (hasCustomBeforeSend) ::beforeSendHandler else null
         )
 
         CoralogixRum.initialize(application, options, Framework.Flutter)
