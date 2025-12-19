@@ -110,7 +110,7 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
                     }
                   } : nil
 
-            let options = try self.toCoralogixOptions(parameter: parameters)
+            var options = try self.toCoralogixOptions(parameter: parameters)
             // Only set beforeSendCallBack when a custom beforeSend is provided
             // When using default beforeSend, native SDK sends logs directly (no performance overhead)
             if hasCustomBeforeSend {
