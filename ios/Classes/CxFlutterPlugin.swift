@@ -126,7 +126,6 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
             let hasBeforeSend = parameters["hasBeforeSend"] as? Bool ?? false
             let beforeSendCallBack: (([[String: Any]]) -> Void)? = hasBeforeSend ?
                 { [weak self] (event: [[String: Any]]) -> Void in
-                    print("event: \(event)")
                     let safePayload = self?.makeJSONSafe(event)
                     DispatchQueue.main.async {
                         self?.eventSink?(safePayload)
@@ -471,7 +470,6 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
             result(FlutterError(code: "4", message: "Arguments is null or empty", details: nil))
             return
         }
-        print("arguments: \(arguments)")
         do {
             let sessionReplayOptions = try toSessionReplayOptions(parameter: arguments)
             SessionReplay.initializeWithOptions(sessionReplayOptions: sessionReplayOptions)
