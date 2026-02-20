@@ -46,8 +46,12 @@ class CXExporterOptions {
   final bool collectIPData;
 
   // Enable event access and modification before sending to Coralogix, supporting content modification, and event discarding.
+<<<<<<< Updated upstream
   // When null, logs are sent directly without Flutter round-trip (better performance).
   // When provided, events are processed through Flutter before sending.
+=======
+  // When null, no callback overhead is incurred on native side.
+>>>>>>> Stashed changes
   final BeforeSendResult Function(EditableCxRumEvent event)? beforeSend;
 
   // When set to `false`, disables Coralogix's automatic method swizzling.
@@ -59,7 +63,7 @@ class CXExporterOptions {
 
   // Add trace context propagation in headers across service boundaries
   Map<String, dynamic>? traceParentInHeader;
-  
+
   CXExporterOptions({
     required this.coralogixDomain,
     this.userContext,

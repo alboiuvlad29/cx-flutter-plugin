@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:cx_flutter_plugin/cx_exporter_options.dart';
 import 'package:cx_flutter_plugin/cx_instrumentation_type.dart';
+import 'package:cx_flutter_plugin/cx_plugin_info.dart';
 import 'package:cx_flutter_plugin/cx_record_first_frame_render_time.dart';
+import 'package:cx_flutter_plugin/cx_record_first_frame_render_time.dart';
+import 'package:cx_flutter_plugin/cx_session_replay_masking.dart';
+import 'package:cx_flutter_plugin/cx_session_replay_options.dart';
 import 'package:cx_flutter_plugin/cx_types.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +26,7 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
 
   StreamSubscription? _eventSubscription;
 
-  EditableCxRumEvent? Function(EditableCxRumEvent) _beforeSendCallback = (event) => event;
+  EditableCxRumEvent? Function(EditableCxRumEvent)? _beforeSendCallback;
 
   WarmStartTracker? _warmStartTracker;
 
@@ -32,18 +36,13 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
     // Remove beforeSend from arguments as it cannot be serialized
     arguments.remove('beforeSend');
 
-    // Check if beforeSend is provided (nullable - when null, native SDK sends directly)
-    final hasBeforeSend = options.beforeSend != null;
-    arguments['hasCustomBeforeSend'] = hasBeforeSend;
 
-    // Store the beforeSend callback (use default pass-through if null)
-    _beforeSendCallback = options.beforeSend ?? ((event) => event);
-    
-    // Start listening to events BEFORE initializing native SDK to ensure event sink is ready
-    // when callbacks are triggered. This prevents events from being dropped during initialization.
-    if (hasBeforeSend) {
-      _startListening();
-    }
+    // Pass flag to native code indicating whether beforeSend callback is provided
+    final hasBeforeSend = options.beforeSend != null;
+    arguments['hasBeforeSend'] = hasBeforeSend;
+
+    arguments['pluginVersion'] = PluginInfo.version;
+
 
     if (arguments['instrumentations'] is Map &&
         arguments['instrumentations'][CXInstrumentationType.mobileVitals.value] == true) {
@@ -56,8 +55,13 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
       }
     }
 
-    // Initialize native SDK after event listener is ready
     final version = await methodChannel.invokeMethod<String>('initSdk', arguments);
+
+    // Only set up event listening if beforeSend callback is provided
+    if (hasBeforeSend) {
+      _beforeSendCallback = options.beforeSend;
+      _startListening();
+    }
 
     return version;
   }
@@ -224,8 +228,11 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
 
   Map<String, dynamic>? _processEvent(Map<String, dynamic> eventMap) {
     try {
+      final callback = _beforeSendCallback;
+      if (callback == null) return null;
+
       final editableEvent = EditableCxRumEvent.fromJson(eventMap);
-      final result = _beforeSendCallback(editableEvent);
+      final result = callback(editableEvent);
       if (result == null) return null;
 
       // Convert result to JSON but only include fields that existed in the original eventMap

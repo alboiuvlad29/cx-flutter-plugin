@@ -97,6 +97,7 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         do {
+<<<<<<< Updated upstream
             // Check if a custom beforeSend is provided
             let hasCustomBeforeSend = parameters["hasCustomBeforeSend"] as? Bool ?? false
             
@@ -117,6 +118,24 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
                 options.beforeSendCallBack = beforeSendCallBack
             }
             let version = parameters["version"] as? String ?? ""
+=======
+            var options = try self.toCoralogixOptions(parameter: parameters)
+            
+            // Only set beforeSendCallback if hasBeforeSend is true to avoid performance overhead
+            let hasBeforeSend = parameters["hasBeforeSend"] as? Bool ?? false
+            if hasBeforeSend {
+                let beforeSendCallBack: (([[String: Any]]) -> Void)? =
+                    { [weak self] (event: [[String: Any]]) -> Void in
+                        let safePayload = self?.makeJSONSafe(event)
+                        DispatchQueue.main.async {
+                            self?.eventSink?(safePayload)
+                        }
+                    }
+                options.beforeSendCallBack = beforeSendCallBack
+            }
+
+            let version = parameters["pluginVersion"] as? String ?? ""
+>>>>>>> Stashed changes
             self.coralogixRum = CoralogixRum(options: options, sdkFramework: .flutter(version: version))
             result("initialize success")
             return
@@ -394,6 +413,90 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
         }
         return result
     }
+<<<<<<< Updated upstream
+=======
+
+    private func initializeSessionReplay(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let arguments = call.arguments as? [String: Any], !arguments.isEmpty else {
+            result(FlutterError(code: "4", message: "Arguments is null or empty", details: nil))
+            return
+        }
+        do {
+            let sessionReplayOptions = try toSessionReplayOptions(parameter: arguments)
+            SessionReplay.initializeWithOptions(sessionReplayOptions: sessionReplayOptions)
+        } catch {
+            result(FlutterError(code: "4", message: "Failed to parse arguments", details: nil))
+            return
+        }
+        
+        result("initializeSessionReplay success")
+    }
+
+     private func isSessionReplayInitialized(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         let isSessionReplayInitialized = SessionReplay.shared.isInitialized()
+         result(isSessionReplayInitialized)
+     }
+
+     private func isRecording(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         let isRecording = SessionReplay.shared.isRecording()
+         result(isRecording)
+     }
+
+     private func shutdownSessionReplay(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         SessionReplay.shared.stopRecording()
+         result("shutdownSessionReplay success")
+     }
+
+     private func startSessionRecording(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         SessionReplay.shared.startRecording()
+         result("startSessionRecording success")
+     }
+
+     private func stopSessionRecording(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         SessionReplay.shared.stopRecording()
+         result("stopSessionRecording success")
+     }
+
+    private func captureScreenshot(call: FlutterMethodCall,
+                                   result: @escaping FlutterResult) {
+        let res = SessionReplay.shared.captureEvent(properties: ["event": "screenshot"])
+        switch res {
+          case .success:
+            result("captureScreenshot success")
+          case .failure(.skippingEvent):
+            // skippingEvent is expected behavior - means no visual change detected
+            result("captureScreenshot skipped (no change detected)")
+          case .failure(let error):
+            Log.d("Error capturing screenshot: \(error)")
+            result(FlutterError(code: "4", message: "Error capturing screenshot: \(error)", details: nil))
+        }
+    }
+
+     private func registerMaskRegion(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         guard let regionId = call.arguments as? String, !regionId.isEmpty else {
+             result(FlutterError(code: "4", message: "Region ID is null or empty", details: nil))
+             return
+         }
+
+         SessionReplay.shared.registerMaskRegion(regionId)
+         result("registerMaskRegion success")
+     }
+
+     private func unregisterMaskRegion(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         guard let regionId = call.arguments as? String, !regionId.isEmpty else {
+             result(FlutterError(code: "4", message: "Region ID is null or empty", details: nil))
+             return
+         }
+
+         SessionReplay.shared.unregisterMaskRegion(regionId)
+         result("unregisterMaskRegion success")
+     }
+
+     private func getSessionReplayFolderPath(call: FlutterMethodCall, result: @escaping FlutterResult) {
+         let folderPath = SessionReplay.shared.getSessionReplayFolderPath()
+         result(folderPath)
+     }
+>>>>>>> Stashed changes
 }
 
 extension CxFlutterPlugin: FlutterStreamHandler {
