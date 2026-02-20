@@ -69,6 +69,10 @@ internal class FlutterPluginManager(
             (optionsDetails["traceParentInHeader"] as? Map<*, *>)?.toStringAnyMap()
         )
 
+        // Only set beforeSendCallback if Dart side has a beforeSend handler,
+        // avoiding serialization and platform channel overhead for every event.
+        val hasBeforeSend = optionsDetails["hasBeforeSend"] as? Boolean ?: false
+
         val options = CoralogixOptions(
             applicationName = optionsDetails["application"] as? String ?: "",
             coralogixDomain = domain,
@@ -85,7 +89,7 @@ internal class FlutterPluginManager(
             proxyUrl = optionsDetails["proxyUrl"] as? String,
             debug = optionsDetails["debug"] as? Boolean ?: false,
             traceParentInHeader = traceParentConfig,
-            beforeSendCallback = ::beforeSendHandler
+            beforeSendCallback = if (hasBeforeSend) ::beforeSendHandler else null
         )
 
         val pluginVersion = optionsDetails["pluginVersion"] as? String ?: ""
