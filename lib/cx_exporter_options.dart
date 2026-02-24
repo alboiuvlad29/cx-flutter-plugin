@@ -99,6 +99,7 @@ class CXExporterOptions {
       'collectIPData': collectIPData,
       'enableSwizzling': enableSwizzling,
       'traceParentInHeader': traceParentInHeader,
+      'hasBeforeSend': beforeSend != null,
     };
   }
 }

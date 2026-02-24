@@ -34,7 +34,6 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
     var arguments = options.toMap();
     // Remove beforeSend from arguments as it cannot be serialized
     arguments.remove('beforeSend');
-    arguments['hasBeforeSend'] = options.beforeSend != null;
 
     arguments['pluginVersion'] = PluginInfo.version;
 
