@@ -95,13 +95,13 @@ internal class FlutterPluginManager(
         val pluginVersion = optionsDetails["pluginVersion"] as? String ?: ""
 
         result.success()
-        Thread {
+        Handler(Looper.getMainLooper()).post {
             CoralogixRum.initialize(
                 application,
                 options,
                 framework = Framework.HybridFramework.Flutter(pluginVersion)
             )
-        }.start()
+        }
     }
 
     private fun parseTraceParentInHeaderConfig(
@@ -318,7 +318,7 @@ internal class FlutterPluginManager(
         val maskAllImages = args["maskAllImages"] as? Boolean ?: false
 
         result.success("initializeSessionReplay success")
-        Thread {
+        Handler(Looper.getMainLooper()).post {
             val sessionReplayOptions = SessionReplayOptions(
                 captureScale = captureScale,
                 captureCompressQuality = captureCompressQuality,
@@ -336,7 +336,7 @@ internal class FlutterPluginManager(
             )
 
             SessionReplay.initialize(application, sessionReplayOptions)
-        }.start()
+        }
     }
 
     override fun isSessionReplayInitialized(result: MethodChannel.Result) {
@@ -364,9 +364,9 @@ internal class FlutterPluginManager(
 
     override fun captureScreenshot(result: MethodChannel.Result) {
         result.success("captureScreenshot success")
-        Thread {
+        Handler(Looper.getMainLooper()).post {
             SessionReplay.captureScreenshot()
-        }.start()
+        }
     }
 
     override fun registerMaskRegion(call: MethodCall, result: MethodChannel.Result) {
