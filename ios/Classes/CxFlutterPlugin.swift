@@ -16,11 +16,16 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
     private var methodChannel: FlutterMethodChannel?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(
-            name: "cx_flutter_plugin", binaryMessenger: registrar.messenger())
-        let instance = CxFlutterPlugin()
-        instance.methodChannel = channel
-        registrar.addMethodCallDelegate(instance, channel: channel)
+         let taskQueue = registrar.messenger().makeBackgroundTaskQueue?()
+         let channel = FlutterMethodChannel(
+           name: "cx_flutter_plugin",
+           binaryMessenger: registrar.messenger(),
+           codec: FlutterStandardMethodCodec.sharedInstance(),
+           taskQueue: taskQueue
+         )
+
+         let instance = CxFlutterPlugin()
+         registrar.addMethodCallDelegate(instance, channel: channel)
 
         // Initialize event channel
         instance.eventChannel = FlutterEventChannel(

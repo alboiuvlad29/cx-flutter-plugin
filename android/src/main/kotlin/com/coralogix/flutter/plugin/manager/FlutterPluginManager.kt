@@ -94,13 +94,14 @@ internal class FlutterPluginManager(
 
         val pluginVersion = optionsDetails["pluginVersion"] as? String ?: ""
 
-        CoralogixRum.initialize(
-            application,
-            options,
-            framework = Framework.HybridFramework.Flutter(pluginVersion)
-        )
-
         result.success()
+        Thread {
+            CoralogixRum.initialize(
+                application,
+                options,
+                framework = Framework.HybridFramework.Flutter(pluginVersion)
+            )
+        }.start()
     }
 
     private fun parseTraceParentInHeaderConfig(
@@ -211,10 +212,11 @@ internal class FlutterPluginManager(
         val message = errorDetails["message"] ?: ""
         val stackTrace = errorDetails["stackTrace"] ?: ""
 
-        val throwable = ThrowableFactory.create(message, stackTrace)
-        CoralogixRum.reportError(throwable)
-
         result.success()
+        Thread {
+            val throwable = ThrowableFactory.create(message, stackTrace)
+            CoralogixRum.reportError(throwable)
+        }.start()
     }
 
     override fun setView(call: MethodCall, result: MethodChannel.Result) {
@@ -273,8 +275,10 @@ internal class FlutterPluginManager(
             return
         }
 
-        CoralogixRum.sendCxSpanData(data)
         result.success()
+        Thread {
+            CoralogixRum.sendCxSpanData(data)
+        }.start()
     }
 
     override fun recordFirstFrameTime(result: MethodChannel.Result) {
@@ -313,24 +317,26 @@ internal class FlutterPluginManager(
         val textsToMask = textsToMaskRaw?.toStringList() ?: emptyList()
         val maskAllImages = args["maskAllImages"] as? Boolean ?: false
 
-        val sessionReplayOptions = SessionReplayOptions(
-            captureScale = captureScale,
-            captureCompressQuality = captureCompressQuality,
-            sessionRecordingSampleRate = sessionRecordingSampleRate,
-            autoStartSessionRecording = autoStartSessionRecording,
-            maskAllTexts = maskAllTexts,
-            textsToMask = if (maskAllTexts) listOf(".*") else textsToMask,
-            maskAllImages = maskAllImages,
-            sampleFrameRatePerSecond = 1,
-            flutterMaskRegionsProvider = { ids ->
-                withContext(Dispatchers.Main) {
-                    getMaskRegions(ids)
-                }
-            }
-        )
-
-        SessionReplay.initialize(application, sessionReplayOptions)
         result.success("initializeSessionReplay success")
+        Thread {
+            val sessionReplayOptions = SessionReplayOptions(
+                captureScale = captureScale,
+                captureCompressQuality = captureCompressQuality,
+                sessionRecordingSampleRate = sessionRecordingSampleRate,
+                autoStartSessionRecording = autoStartSessionRecording,
+                maskAllTexts = maskAllTexts,
+                textsToMask = if (maskAllTexts) listOf(".*") else textsToMask,
+                maskAllImages = maskAllImages,
+                sampleFrameRatePerSecond = 1,
+                flutterMaskRegionsProvider = { ids ->
+                    withContext(Dispatchers.Main) {
+                        getMaskRegions(ids)
+                    }
+                }
+            )
+
+            SessionReplay.initialize(application, sessionReplayOptions)
+        }.start()
     }
 
     override fun isSessionReplayInitialized(result: MethodChannel.Result) {
@@ -357,8 +363,10 @@ internal class FlutterPluginManager(
     }
 
     override fun captureScreenshot(result: MethodChannel.Result) {
-        SessionReplay.captureScreenshot()
         result.success("captureScreenshot success")
+        Thread {
+            SessionReplay.captureScreenshot()
+        }.start()
     }
 
     override fun registerMaskRegion(call: MethodCall, result: MethodChannel.Result) {
