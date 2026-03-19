@@ -15,6 +15,8 @@ import 'cx_interaction_types.dart';
 /// there is no "off" branch inside this class because the tracker is simply not started.
 ///
 /// When enabled, captures taps, scrolls, and swipes without requiring any wrapper widget.
+/// [CXInstrumentationType.userActions] is read from [CxFlutterPlugin.globalOptions] on each
+/// pointer event, so turning it off at runtime stops reporting immediately.
 class CxInteractionTracker {
   static CxInteractionTracker? _instance;
   static bool _isInitialized = false;
@@ -23,9 +25,6 @@ class CxInteractionTracker {
   /// Threshold in pixels - movement less than this is a tap, more is scroll/swipe
   final double tapThreshold;
   final bool debug;
-  
-  /// Cached at initialization - avoids repeated checks on every pointer event
-  final bool _userActionsEnabled;
 
   // State tracking
   final Map<int, _PointerState> _pointerStates = {};
@@ -33,7 +32,7 @@ class CxInteractionTracker {
   CxInteractionTracker._({
     this.tapThreshold = 20.0,  // Same as native iOS SDK
     this.debug = false,
-  }) : _userActionsEnabled = _checkUserActionsEnabled();
+  });
   
   /// Check if userActions is enabled in the SDK options.
   static bool _checkUserActionsEnabled() {
@@ -90,7 +89,11 @@ class CxInteractionTracker {
   }
 
   void _handlePointerEvent(PointerEvent event) {
-    if (!_userActionsEnabled) return;
+    if (!_checkUserActionsEnabled()) {
+      // Clear in-flight pointers when userActions is turned off mid-gesture
+      _pointerStates.remove(event.pointer);
+      return;
+    }
 
     if (event is PointerDownEvent) {
       _handlePointerDown(event);

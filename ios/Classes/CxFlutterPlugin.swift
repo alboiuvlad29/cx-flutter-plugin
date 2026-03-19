@@ -123,14 +123,16 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         do {
-            // Create beforeSendCallback only if parameter["beforeSend"] is not null
-            let beforeSendCallBack: (([[String: Any]]) -> Void)? =
+            // beforeSend is optional: when false, pass nil so the native SDK sends events directly
+            // without platform channel round-trip; when true, events go to Dart for processing then back via sendCxSpanData.
+            let hasBeforeSend = parameters["hasBeforeSend"] as? Bool ?? false
+            let beforeSendCallBack: (([[String: Any]]) -> Void)? = hasBeforeSend ?
                 { [weak self] (event: [[String: Any]]) -> Void in
                     let safePayload = self?.makeJSONSafe(event)
                     DispatchQueue.main.async {
                         self?.eventSink?(safePayload)
                     }
-                  }
+                  } : nil
 
             var options = try self.toCoralogixOptions(parameter: parameters)
             options.beforeSendCallBack = beforeSendCallBack

@@ -71,6 +71,10 @@ internal class FlutterPluginManager(
             (optionsDetails["traceParentInHeader"] as? Map<*, *>)?.toStringAnyMap()
         )
 
+        // beforeSend is optional: when false, pass null so the native SDK sends events directly
+        // without platform channel round-trip; when true, events go to Dart for processing then back via sendCxSpanData.
+        val hasBeforeSend = optionsDetails["hasBeforeSend"] as? Boolean ?: false
+
         val options = CoralogixOptions(
             applicationName = optionsDetails["application"] as? String ?: "",
             coralogixDomain = domain,
@@ -87,7 +91,7 @@ internal class FlutterPluginManager(
             proxyUrl = optionsDetails["proxyUrl"] as? String,
             debug = optionsDetails["debug"] as? Boolean ?: false,
             traceParentInHeader = traceParentConfig,
-            beforeSendCallback = ::beforeSendHandler
+            beforeSendCallback = if (hasBeforeSend) ::beforeSendHandler else null
         )
 
         val pluginVersion = optionsDetails["pluginVersion"] as? String ?: ""
@@ -187,7 +191,8 @@ internal class FlutterPluginManager(
             direction = userInteractionDetailsMap["scroll_direction"] as? String,
             targetElement = userInteractionDetailsMap["target_element"] as? String,
             elementClasses = userInteractionDetailsMap["element_classes"] as? String,
-            targetId = userInteractionDetailsMap["target_id"] as? String,
+            targetId = (userInteractionDetailsMap["target_id"] as? String)
+                ?: (userInteractionDetailsMap["element_id"] as? String),
             innerText = userInteractionDetailsMap["target_element_inner_text"] as? String,
             x = (attributesMap?.get("x") as? Number)?.toDouble(),
             y = (attributesMap?.get("y") as? Number)?.toDouble(),
