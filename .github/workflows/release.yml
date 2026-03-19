@@ -1,0 +1,92 @@
+# Publish to pub.dev when a GitHub Release is published.
+# Create a release (and tag, e.g. v0.1.1) from the repo; this workflow runs and publishes the package.
+# Required secret: PUB_DEV_CREDENTIALS_JSON — contents of ~/.pub-cache/credentials.json
+#   (from your machine after running: flutter pub login)
+
+name: Release (publish to pub.dev)
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff
+        with:
+          flutter-version: "3.27.0"
+          cache: true
+
+      - name: Version and pre-checks
+        run: |
+          set -e
+          PLUGIN_VERSION=$(grep '^version: ' pubspec.yaml | awk '{print $2}' | tr -d '\r\n')
+          PLUGIN_NAME=$(grep '^name: ' pubspec.yaml | awk '{print $2}' | tr -d '\r\n')
+          echo "PLUGIN_VERSION=$PLUGIN_VERSION" >> "$GITHUB_ENV"
+          echo "PLUGIN_NAME=$PLUGIN_NAME" >> "$GITHUB_ENV"
+          echo "Version: $PLUGIN_VERSION"
+          if [ -z "$PLUGIN_VERSION" ]; then echo "::error::No version in pubspec.yaml"; exit 1; fi
+          RELEASE_TAG="${GITHUB_REF_NAME}"
+          NORMALIZED_TAG="${RELEASE_TAG#v}"
+          if [ "$NORMALIZED_TAG" != "$PLUGIN_VERSION" ]; then
+            echo "::error::Release tag $RELEASE_TAG (normalized: $NORMALIZED_TAG) does not match pubspec version $PLUGIN_VERSION"
+            exit 1
+          fi
+          PUB_DEV_RESPONSE=$(curl -s -w '\n%{http_code}' "https://pub.dev/api/packages/$PLUGIN_NAME") || { echo "::error::Failed to fetch pub.dev API for package $PLUGIN_NAME"; exit 1; }
+          PUB_DEV_HTTP_CODE=$(echo "$PUB_DEV_RESPONSE" | tail -n1)
+          PUB_DEV_BODY=$(echo "$PUB_DEV_RESPONSE" | sed '$d')
+          if [ "$PUB_DEV_HTTP_CODE" = "404" ]; then
+            PUB_DEV_BODY=""
+          elif [ "$PUB_DEV_HTTP_CODE" != "200" ]; then
+            echo "::error::pub.dev API returned HTTP $PUB_DEV_HTTP_CODE for $PLUGIN_NAME"
+            exit 1
+          fi
+          if echo "$PUB_DEV_BODY" | grep -q "\"version\":\"$PLUGIN_VERSION\""; then
+            echo "::error::Version $PLUGIN_VERSION already published on pub.dev"
+            exit 1
+          fi
+          ESCAPED_VERSION=$(printf '%s' "$PLUGIN_VERSION" | sed -E 's/[][\.^$*+?{}|()]/\\&/g')
+          if ! grep -Eq "##[[:space:]]*(\[?v?$ESCAPED_VERSION\]?)" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no entry for $PLUGIN_VERSION"
+            exit 1
+          fi
+          if grep -q "^publish_to:[[:space:]]*['\"]none['\"]" pubspec.yaml || grep -q "^publish_to:[[:space:]]*none" pubspec.yaml; then
+            echo "::error::pubspec.yaml has publish_to: none"
+            exit 1
+          fi
+
+      - name: Dry-run publish
+        run: flutter pub publish --dry-run
+
+      - name: Validate example
+        run: |
+          cd example
+          flutter clean
+          flutter pub get
+          flutter analyze
+          flutter test
+
+      - name: Set up pub.dev credentials
+        run: |
+          mkdir -p "$HOME/.pub-cache"
+          printf '%s\n' "$PUB_DEV_CREDENTIALS_JSON" > "$HOME/.pub-cache/credentials.json"
+          chmod 700 "$HOME/.pub-cache"
+          chmod 600 "$HOME/.pub-cache/credentials.json"
+        env:
+          PUB_DEV_CREDENTIALS_JSON: ${{ secrets.PUB_DEV_CREDENTIALS_JSON }}
+
+      - name: Publish to pub.dev
+        run: flutter pub publish --force

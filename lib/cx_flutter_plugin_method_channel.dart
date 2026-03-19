@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:cx_flutter_plugin/cx_plugin_info.dart';
 import 'package:cx_flutter_plugin/cx_exporter_options.dart';
+import 'package:cx_flutter_plugin/cx_plugin_info.dart';
 import 'package:cx_flutter_plugin/cx_session_replay_masking.dart';
 import 'package:cx_flutter_plugin/cx_session_replay_options.dart';
 import 'package:cx_flutter_plugin/cx_types.dart';
@@ -24,7 +24,7 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
 
   StreamSubscription? _eventSubscription;
 
-  EditableCxRumEvent? Function(EditableCxRumEvent) _beforeSendCallback = (event) => event;
+  EditableCxRumEvent? Function(EditableCxRumEvent)? _beforeSendCallback;
 
   @override
   Future<String?> initSdk(CXExporterOptions options) async {
@@ -33,12 +33,18 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
     arguments.remove('beforeSend');
 
     arguments['pluginVersion'] = PluginInfo.version;
-   
+    arguments['hasBeforeSend'] = options.beforeSend != null;
+
     final version = await methodChannel.invokeMethod<String>('initSdk', arguments);
 
-    // If Dart-side beforeSend callback is provided, register it
-    _beforeSendCallback = options.beforeSend;
-    _startListening();
+    // beforeSend is optional: only set up listener when provided; otherwise native SDK sends events directly.
+    if (options.beforeSend != null) {
+      _beforeSendCallback = options.beforeSend;
+      _startListening();
+    } else {
+      _beforeSendCallback = null;
+      stopListening();
+    }
 
     return version;
   }
@@ -212,8 +218,11 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
 
   Map<String, dynamic>? _processEvent(Map<String, dynamic> eventMap) {
     try {
+      final callback = _beforeSendCallback;
+      if (callback == null) return null;
+      
       final editableEvent = EditableCxRumEvent.fromJson(eventMap);
-      final result = _beforeSendCallback(editableEvent);
+      final result = callback(editableEvent);
       if (result == null) return null;
 
       // Convert result to JSON but only include fields that existed in the original eventMap
@@ -258,6 +267,7 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
 
     if (processedEvents.isNotEmpty) {
       try {
+        // Payload is from Dart types' toJson(); schema validation reflects these keys (e.g. device_context).
         await methodChannel.invokeMethod('sendCxSpanData', processedEvents);
       } on PlatformException catch (e) {
         debugPrint('Failed to send processed events: $e');
@@ -282,9 +292,6 @@ class MethodChannelCxFlutterPlugin extends CxFlutterPluginPlatform {
   void stopListening() {
     _eventSubscription?.cancel();
     _eventSubscription = null;
-  }
-
-  void dispose() {
   }
 
   // session replay methods

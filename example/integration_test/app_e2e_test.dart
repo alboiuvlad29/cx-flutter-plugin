@@ -1,9 +1,6 @@
-import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:coralogix_sdk/main.dart' as app;
@@ -19,42 +16,6 @@ String extractTextFromInlineSpan(dynamic span) {
     return span;
   }
   return span.toString();
-}
-
-/// Handles validation errors by adding them to failed tests and printing a summary
-void _handleValidationErrors(
-  List<String> errors,
-  String? sessionId,
-  List<String> failedTests,
-) {
-  final errorMessage = 'Log Validation: ${errors.length} log(s) failed validation:\n'
-      '${errors.join('\n')}\n'
-      'Session ID: $sessionId';
-  
-  failedTests.add(errorMessage);
-  
-  // Print detailed validation error summary
-  _printSectionHeader('❌ LOG VALIDATION FAILURE SUMMARY');
-  debugPrint('Failed Validations (${errors.length}):');
-  for (int i = 0; i < errors.length; i++) {
-    debugPrint('  ${i + 1}. ${errors[i]}');
-  }
-  debugPrint('Session ID: $sessionId');
-  _printSectionFooter();
-}
-
-/// Prints a section header with separator line
-void _printSectionHeader(String title) {
-  debugPrint('');
-  debugPrint('=' * 80);
-  debugPrint(title);
-  debugPrint('=' * 80);
-}
-
-/// Prints a section footer with separator line
-void _printSectionFooter() {
-  debugPrint('=' * 80);
-  debugPrint('');
 }
 
 void main() {
@@ -224,95 +185,22 @@ void main() {
     });
 
     tearDownAll(() async {
-      // Poll HTTP endpoint until logs exist, then validate
       if (sessionId == null || sessionId!.isEmpty) {
         debugPrint('Warning: Session ID not available for validation. Skipping validation.');
         return;
       }
 
-      debugPrint('Starting log validation for session: $sessionId');
+      final validationResult = await validateSchemaForSession(sessionId);
 
-      // Poll until logs are available
-      final validationUrl = 'https://schema-validator-latest.onrender.com/logs/validate/$sessionId';
-      const maxPollAttempts = 30;
-      const pollInterval = Duration(seconds: 2);
-      
-      List<dynamic>? validationData;
-      
-      for (int attempt = 0; attempt < maxPollAttempts; attempt++) {
-        try {
-          final response = await http.get(
-            Uri.parse(validationUrl),
-            headers: {'Accept': 'application/json'},
-          ).timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              throw TimeoutException('Request timed out');
-            },
-          );
-
-          if (response.statusCode == 200) {
-            final decoded = json.decode(response.body);
-            if (decoded is List && decoded.isNotEmpty) {
-              validationData = decoded;
-              debugPrint('Logs found after ${attempt + 1} attempts');
-              break;
-            }
-          }
-        } catch (e) {
-          debugPrint('Poll attempt ${attempt + 1} failed: $e');
-        }
-
-        if (attempt < maxPollAttempts - 1) {
-          await Future.delayed(pollInterval);
-        }
-      }
-
-      if (validationData == null || validationData.isEmpty) {
-        throw Exception(
-          'No logs found for validation after $maxPollAttempts attempts. '
-          'Session ID: $sessionId'
-        );
-      }
-
-      // Validate each log entry
-      final List<String> errors = [];
-      
-      for (final item in validationData) {
-        try {
-          if (item is! Map<String, dynamic>) {
-            errors.add('Invalid item format: $item');
-            continue;
-          }
-
-          final validationResult = item['validationResult'];
-          if (validationResult is! Map<String, dynamic>) {
-            errors.add('Invalid validationResult format: $validationResult');
-            continue;
-          }
-
-          final statusCode = validationResult['statusCode'];
-          final message = validationResult['message'];
-
-          if (statusCode != 200) {
-            final errorMsg = message is String 
-                ? message 
-                : 'Invalid status code: $statusCode';
-            errors.add(errorMsg);
-          }
-        } catch (e) {
-          errors.add('Error processing validation item: $e');
-        }
-      }
-
-      // Handle validation results
-      if (errors.isNotEmpty) {
-        _handleValidationErrors(errors, sessionId, failedTests);
+      if (!validationResult.success) {
+        failedTests.addAll(validationResult.errors);
       } else {
-        debugPrint('✅ All ${validationData.length} logs validated successfully!');
+        final count = validationResult.validationData?.length ?? 0;
+        debugPrint('✅ All $count logs validated successfully!');
       }
 
       if (failedTests.isNotEmpty) {
+        printValidationErrors(failedTests, 'E2E TEST FAILURES');
         throw Exception(
           'Test failures detected:\n${failedTests.join('\n')}',
         );

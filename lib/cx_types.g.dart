@@ -83,8 +83,11 @@ DeviceContext _$DeviceContextFromJson(Map<String, dynamic> json) =>
       device: json['device'] as String?,
       deviceName: json['device_name'] as String?,
       emulator: json['emulator'] as bool?,
-      os: json['os'] as String?,
-      osVersion: json['osVersion'],
+      os: json['operating_system'] as String?,
+      osVersion: json['os_version'],
+      networkConnectionType: json['network_connection_type'] as String?,
+      networkConnectionSubtype: json['network_connection_subtype'] as String?,
+      userAgent: json['user_agent'] as String?,
     );
 
 Map<String, dynamic> _$DeviceContextToJson(DeviceContext instance) =>
@@ -92,18 +95,23 @@ Map<String, dynamic> _$DeviceContextToJson(DeviceContext instance) =>
       'device': instance.device,
       'device_name': instance.deviceName,
       'emulator': instance.emulator,
-      'os': instance.os,
-      'osVersion': instance.osVersion,
+      'operating_system': instance.os,
+      'os_version': instance.osVersion,
+      'network_connection_type': instance.networkConnectionType,
+      'network_connection_subtype': instance.networkConnectionSubtype,
+      'user_agent': instance.userAgent,
     };
 
 EventContext _$EventContextFromJson(Map<String, dynamic> json) => EventContext(
       type: $enumDecode(_$CoralogixEventTypeEnumMap, json['type']),
+      source: json['source'] as String?,
       severity: $enumDecodeNullable(_$CxLogSeverityEnumMap, json['severity']),
     );
 
 Map<String, dynamic> _$EventContextToJson(EventContext instance) =>
     <String, dynamic>{
       'type': _$CoralogixEventTypeEnumMap[instance.type]!,
+      'source': instance.source,
       'severity': _$CxLogSeverityEnumMap[instance.severity],
     };
 
@@ -154,6 +162,7 @@ ErrorContext _$ErrorContextFromJson(Map<String, dynamic> json) => ErrorContext(
       threads: (json['threads'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList(),
+      exceptionType: json['exception_type'] as String?,
     );
 
 Map<String, dynamic> _$ErrorContextToJson(ErrorContext instance) =>
@@ -174,6 +183,7 @@ Map<String, dynamic> _$ErrorContextToJson(ErrorContext instance) =>
       'base_address': instance.baseAddress,
       'arch': instance.arch,
       'threads': instance.threads,
+      'exception_type': instance.exceptionType,
     };
 
 LogContext _$LogContextFromJson(Map<String, dynamic> json) => LogContext(
@@ -212,6 +222,14 @@ NetworkRequestContext _$NetworkRequestContextFromJson(
       responseContentLength: NetworkRequestContext._responseContentLengthFromJson(
           json['response_content_length']),
       duration: (json['duration'] as num?)?.toInt() ?? 0,
+      requestHeaders: (json['request_headers'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
+      responseHeaders: (json['response_headers'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
+      requestPayload: json['request_payload'] as String?,
+      responsePayload: json['response_payload'] as String?,
     );
 
 Map<String, dynamic> _$NetworkRequestContextToJson(
@@ -226,6 +244,10 @@ Map<String, dynamic> _$NetworkRequestContextToJson(
       'status_text': instance.statusText,
       'response_content_length': instance.responseContentLength,
       'duration': instance.duration,
+      'request_headers': instance.requestHeaders,
+      'response_headers': instance.responseHeaders,
+      'request_payload': instance.requestPayload,
+      'response_payload': instance.responsePayload,
     };
 
 SnapshotContext _$SnapshotContextFromJson(Map<String, dynamic> json) =>

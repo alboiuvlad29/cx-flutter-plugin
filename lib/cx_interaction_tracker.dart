@@ -8,10 +8,15 @@ import 'cx_instrumentation_type.dart';
 import 'cx_interaction_types.dart';
 
 /// Automatic user interaction tracker that hooks into Flutter's gesture system.
-/// 
-/// This tracker automatically captures taps, scrolls, and swipes without 
-/// requiring any wrapper widget. It's initialized automatically when the SDK
-/// starts with `userActions` instrumentation enabled.
+///
+/// This tracker is only started when the user sets `userActions: true` in
+/// [CXExporterOptions]. When the user sets `userActions: false`, [CxFlutterPlugin.initSdk]
+/// never calls [initialize], so no listener is attached and no detection runs —
+/// there is no "off" branch inside this class because the tracker is simply not started.
+///
+/// When enabled, captures taps, scrolls, and swipes without requiring any wrapper widget.
+/// [CXInstrumentationType.userActions] is read from [CxFlutterPlugin.globalOptions] on each
+/// pointer event, so turning it off at runtime stops reporting immediately.
 class CxInteractionTracker {
   static CxInteractionTracker? _instance;
   static bool _isInitialized = false;
@@ -20,9 +25,6 @@ class CxInteractionTracker {
   /// Threshold in pixels - movement less than this is a tap, more is scroll/swipe
   final double tapThreshold;
   final bool debug;
-  
-  /// Cached at initialization - avoids repeated checks on every pointer event
-  final bool _userActionsEnabled;
 
   // State tracking
   final Map<int, _PointerState> _pointerStates = {};
@@ -30,7 +32,7 @@ class CxInteractionTracker {
   CxInteractionTracker._({
     this.tapThreshold = 20.0,  // Same as native iOS SDK
     this.debug = false,
-  }) : _userActionsEnabled = _checkUserActionsEnabled();
+  });
   
   /// Check if userActions is enabled in the SDK options.
   static bool _checkUserActionsEnabled() {
@@ -39,7 +41,8 @@ class CxInteractionTracker {
   }
 
   /// Initialize automatic interaction tracking.
-  /// Called automatically by CxFlutterPlugin.initSdk when userActions is enabled.
+  /// Called only when user set [CXInstrumentationType.userActions] to true in options.
+  /// When user set it to false, [CxFlutterPlugin.initSdk] does not call this, so no detection runs.
   static void initialize({
     double tapThreshold = 20.0,  // Same as native iOS SDK
     bool debug = false,
@@ -86,7 +89,11 @@ class CxInteractionTracker {
   }
 
   void _handlePointerEvent(PointerEvent event) {
-    if (!_userActionsEnabled) return;
+    if (!_checkUserActionsEnabled()) {
+      // Clear in-flight pointers when userActions is turned off mid-gesture
+      _pointerStates.remove(event.pointer);
+      return;
+    }
 
     if (event is PointerDownEvent) {
       _handlePointerDown(event);
@@ -232,7 +239,6 @@ class CxInteractionTracker {
   }
 
   void _reportInteraction(CxInteractionData data) {
-    _log('Reporting: ${data.toMap()}');
     unawaited(
       CxFlutterPlugin.setUserInteraction(data.toMap()).catchError((e, s) {
         _log('Error reporting interaction: $e');
@@ -249,7 +255,7 @@ class CxInteractionTracker {
       // Check all render views (dialogs/overlays may be in different views)
       final renderViews = WidgetsBinding.instance.renderViews;
       if (renderViews.isEmpty) {
-        return _WidgetInfo(targetElement: 'Screen');
+        return _WidgetInfo(targetElement: 'Screen', widgetClassName: 'Screen');
       }
 
       Element? deepestElement;
@@ -329,7 +335,7 @@ class CxInteractionTracker {
       deepestElement = bestInteractiveElement ?? allHitElements.firstOrNull;
 
       if (deepestElement == null) {
-        return _WidgetInfo(targetElement: 'Screen');
+        return _WidgetInfo(targetElement: 'Screen', widgetClassName: 'Screen');
       }
 
       // Use the already-found bestInteractiveElement for the class name
@@ -403,7 +409,7 @@ class CxInteractionTracker {
       _log('Error extracting widget info: $e');
     }
 
-    return _WidgetInfo(targetElement: 'Screen');
+    return _WidgetInfo(targetElement: 'Screen', widgetClassName: 'Screen');
   }
   
   /// Returns true if this is a meaningful interactive element

@@ -2,6 +2,9 @@
 
 set -e
 
+PLUGIN_ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$PLUGIN_ROOT"
+
 echo "🔍 Checking pubspec.yaml for version..."
 PLUGIN_VERSION=$(grep '^version: ' pubspec.yaml | awk '{print $2}' | tr -d '\r\n')
 if [ -z "$PLUGIN_VERSION" ]; then
@@ -85,6 +88,7 @@ if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
   exit 1
 fi
 
+cd "$PLUGIN_ROOT"
 echo "📤 Publishing to pub.dev..."
 set +e  # Temporarily disable exit on error
 flutter pub publish --force

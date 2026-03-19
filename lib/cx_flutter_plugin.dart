@@ -16,14 +16,19 @@ class CxFlutterPlugin {
   // Check if options are available
   static bool get hasGlobalOptions => _globalOptions != null;
 
+  /// User interaction logic for hybrid (Flutter):
+  /// - [userInteraction: true]  → Dart detects click/scroll/swipe; native is always
+  ///   passed false to avoid duplicate events.
+  /// - [userInteraction: false] → No detection on Dart; native is still passed false.
   static Future<String?> initSdk(CXExporterOptions options) async {
     // Save options globally for later use
     _globalOptions = options;
     
-    // Initialize platform SDK first
+    // Initialize platform SDK first (iOS/Android always receive userActions: false)
     final result = await CxFlutterPluginPlatform.instance.initSdk(options);
     
-    // Only initialize interaction tracking after platform SDK succeeds
+    // Only run Dart-side interaction tracking when user opted in.
+    // result is non-null on successful platform init; null when platform init failed (exception propagates or platform returned null).
     if (result != null) {
       final userActionsEnabled = options.instrumentations?[CXInstrumentationType.userActions.value] == true;
       if (userActionsEnabled) {

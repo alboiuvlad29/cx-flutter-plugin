@@ -3,6 +3,7 @@ package com.coralogix.flutter.plugin.manager
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import com.coralogix.android.sdk.CoralogixRum
 import com.coralogix.android.sdk.session_replay.SessionReplay
 import com.coralogix.android.sdk.session_replay.model.SessionReplayOptions
@@ -13,6 +14,7 @@ import com.coralogix.android.sdk.model.TraceParentInHeaderConfig
 import com.coralogix.android.sdk.model.TraceParentInHeaderConfigOptions
 
 import com.coralogix.android.sdk.model.UserContext
+import com.coralogix.android.sdk.model.UserInteractionDetails
 import com.coralogix.android.sdk.session_replay.internal.MaskRegion
 import com.coralogix.flutter.plugin.extensions.error
 import com.coralogix.flutter.plugin.extensions.invalidArgumentsError
@@ -55,7 +57,7 @@ internal class FlutterPluginManager(
         val userContext = userContextMap?.toUserContext() ?: UserContext()
 
         val instrumentationsMap = (optionsDetails["instrumentations"] as? Map<*, *>)?.toStringBooleanMap() ?: emptyMap()
-        val instrumentations = InstrumentationMapper.toMap(instrumentationsMap)
+        val instrumentations = InstrumentationMapper.toMap(instrumentationsMap).toMutableMap()
 
         val domainString = optionsDetails["coralogixDomain"] as? String ?: ""
         val domain = try {
@@ -68,6 +70,10 @@ internal class FlutterPluginManager(
         val traceParentConfig = parseTraceParentInHeaderConfig(
             (optionsDetails["traceParentInHeader"] as? Map<*, *>)?.toStringAnyMap()
         )
+
+        // beforeSend is optional: when false, pass null so the native SDK sends events directly
+        // without platform channel round-trip; when true, events go to Dart for processing then back via sendCxSpanData.
+        val hasBeforeSend = optionsDetails["hasBeforeSend"] as? Boolean ?: false
 
         val options = CoralogixOptions(
             applicationName = optionsDetails["application"] as? String ?: "",
@@ -85,7 +91,7 @@ internal class FlutterPluginManager(
             proxyUrl = optionsDetails["proxyUrl"] as? String,
             debug = optionsDetails["debug"] as? Boolean ?: false,
             traceParentInHeader = traceParentConfig,
-            beforeSendCallback = ::beforeSendHandler
+            beforeSendCallback = if (hasBeforeSend) ::beforeSendHandler else null
         )
 
         val pluginVersion = optionsDetails["pluginVersion"] as? String ?: ""
@@ -164,8 +170,36 @@ internal class FlutterPluginManager(
             result.invalidArgumentsError()
             return
         }
-        // TODO: Implement proper SDK integration when Android SDK exposes public API (CX-33604)
-        result.error("UNAVAILABLE", "SDK integration not available; event not forwarded", null)
+        if (!CoralogixRum.isInitialized()) {
+            result.error("UNAVAILABLE", "SDK not initialized; event not forwarded", null)
+            return
+        }
+        val userInteractionDetailsMap = arguments.toStringAnyMap()
+
+        val attributesMap = userInteractionDetailsMap["attributes"] as? Map<*, *>
+
+        val eventName = userInteractionDetailsMap["event_name"] as? String
+        if (eventName == null) {
+            Log.w(
+                "FlutterPluginManager",
+                "reportUserInteraction: missing required field 'event_name', dropping interaction"
+            )
+            result.error("missing required field 'event_name'")
+            return
+        }
+        val details = UserInteractionDetails(
+            type = eventName,
+            direction = userInteractionDetailsMap["scroll_direction"] as? String,
+            targetElement = userInteractionDetailsMap["target_element"] as? String,
+            elementClasses = userInteractionDetailsMap["element_classes"] as? String,
+            targetId = (userInteractionDetailsMap["target_id"] as? String)
+                ?: (userInteractionDetailsMap["element_id"] as? String),
+            innerText = userInteractionDetailsMap["target_element_inner_text"] as? String,
+            x = (attributesMap?.get("x") as? Number)?.toDouble(),
+            y = (attributesMap?.get("y") as? Number)?.toDouble(),
+        )
+        CoralogixRum.reportUserInteraction(details)
+        result.success()
     }
 
     @Suppress("UNCHECKED_CAST")

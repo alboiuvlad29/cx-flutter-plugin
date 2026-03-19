@@ -170,6 +170,9 @@ class DeviceState {
   Map<String, dynamic> toJson() => _$DeviceStateToJson(this);
 }
 
+/// Device context. Serializes with [toJson] using keys expected by the schema
+/// validator (os, osVersion). [fromJson] accepts both validator keys and
+/// native keys (operating_system, os_version) so events from native round-trip correctly.
 @JsonSerializable()
 class DeviceContext {
   String? device;
@@ -178,8 +181,21 @@ class DeviceContext {
   String? deviceName;
 
   bool? emulator;
+
+  @JsonKey(name: 'operating_system')
   String? os;
+
+  @JsonKey(name: 'os_version')
   dynamic osVersion;
+
+  @JsonKey(name: 'network_connection_type')
+  String? networkConnectionType;
+
+  @JsonKey(name: 'network_connection_subtype')
+  String? networkConnectionSubtype;
+
+  @JsonKey(name: 'user_agent')
+  String? userAgent;
 
   DeviceContext({
     this.device,
@@ -187,23 +203,53 @@ class DeviceContext {
     this.emulator,
     this.os,
     this.osVersion,
+    this.networkConnectionType,
+    this.networkConnectionSubtype,
+    this.userAgent,
   });
 
-  factory DeviceContext.fromJson(Map<String, dynamic> json) =>
-      _$DeviceContextFromJson(json);
+  /// Accepts both validator keys (os, osVersion) and native keys (operating_system, os_version).
+  factory DeviceContext.fromJson(Map<String, dynamic> json) {
+    final os = json['operating_system'] ?? json['os'];
+    final osVersion = json['os_version'] ?? json['osVersion'];
+    return DeviceContext(
+      device: json['device'] as String?,
+      deviceName: json['device_name'] as String?,
+      emulator: json['emulator'] as bool?,
+      os: os is String ? os : os?.toString(),
+      osVersion: osVersion,
+      networkConnectionType: json['network_connection_type'] as String?,
+      networkConnectionSubtype: json['network_connection_subtype'] as String?,
+      userAgent: json['user_agent'] as String?,
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$DeviceContextToJson(this);
+  /// Emits keys expected by the schema validator (os, osVersion) so validation passes.
+  /// Omits operating_system, os_version, network_connection_subtype (validator forbids),
+  /// and omits networkConnectionType and userAgent from outgoing payload by design.
+  /// Only includes os/osVersion when non-null to avoid empty strings that may fail validation.
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'device': device,
+      'device_name': deviceName,
+      'emulator': emulator,
+    };
+    if (os != null) map['os'] = os!;
+    if (osVersion != null) map['osVersion'] = osVersion.toString();
+    return map;
+  }
 }
 
 @JsonSerializable()
 class EventContext {
   final CoralogixEventType type;
-  
+  final String? source;
   @JsonKey(includeIfNull: true)
   final CxLogSeverity? severity;
 
   EventContext({
     required this.type,
+    this.source,
     this.severity,
   });
 
@@ -257,6 +303,9 @@ class ErrorContext {
   String? arch;
   List<Map<String, dynamic>>? threads;
 
+  @JsonKey(name: 'exception_type')
+  String? exceptionType;
+
   ErrorContext({
     this.domain,
     this.code,
@@ -274,6 +323,7 @@ class ErrorContext {
     this.baseAddress,
     this.arch,
     this.threads,
+    this.exceptionType,
   });
 
   factory ErrorContext.fromJson(Map<String, dynamic> json) =>
@@ -311,34 +361,65 @@ class MeasurementContext {
 class InteractionContext {
     @JsonKey(name: 'element_id')
     String? elementId;
-      
+
     @JsonKey(name: 'event_name')
     String? eventName;
+
+    @JsonKey(name: 'target_element')
+    String? targetElement;
+
+    @JsonKey(name: 'element_classes')
+    String? elementClasses;
+
+    @JsonKey(name: 'target_element_inner_text')
+    String? targetElementInnerText;
+
+    @JsonKey(name: 'scroll_direction')
+    String? scrollDirection;
 
     final Map<String, dynamic>? attributes;
 
     InteractionContext({
       this.elementId,
       this.eventName,
+      this.targetElement,
+      this.elementClasses,
+      this.targetElementInnerText,
+      this.scrollDirection,
       this.attributes,
     });
 
     factory InteractionContext.fromJson(Map<String, dynamic> json) {
       return InteractionContext(
-        elementId: json['element_id'] as String?,
+        elementId: (json['element_id'] ?? json['target_id']) as String?,
         eventName: json['event_name'] as String?,
-        attributes: json['attributes'] != null 
+        targetElement: json['target_element'] as String?,
+        elementClasses: json['element_classes'] as String?,
+        targetElementInnerText: json['target_element_inner_text'] as String?,
+        scrollDirection: json['scroll_direction'] as String?,
+        attributes: json['attributes'] != null
             ? Map<String, dynamic>.from(json['attributes'] as Map)
             : null,
       );
     }
 
-     Map<String, dynamic> toJson() {
-     return {
-        'element_id': elementId,
-        'event_name': eventName,
-        'attributes': attributes,
-      };
+    /// Serializes to the same keys as iOS InteractionContext.getDictionary():
+    /// event_name, target_element, element_classes, element_id, target_id, target_element_inner_text, scroll_direction, attributes.
+    /// Emits both element_id and target_id when [elementId] is set so Android (target_id) and legacy (element_id) both work.
+    /// Optional fields are only included when non-null to match the SDK.
+    Map<String, dynamic> toJson() {
+      final map = <String, dynamic>{};
+      if (eventName != null) map['event_name'] = eventName;
+      if (targetElement != null) map['target_element'] = targetElement;
+      if (elementId != null) {
+        map['element_id'] = elementId;
+        map['target_id'] = elementId;
+      }
+      if (elementClasses != null) map['element_classes'] = elementClasses;
+      if (targetElementInnerText != null) map['target_element_inner_text'] = targetElementInnerText;
+      if (scrollDirection != null) map['scroll_direction'] = scrollDirection;
+      if (attributes != null) map['attributes'] = attributes;
+      return map;
     }
 }
     
@@ -366,6 +447,18 @@ class NetworkRequestContext {
 
   int duration;
 
+  @JsonKey(name: 'request_headers')
+  Map<String, String>? requestHeaders;
+
+  @JsonKey(name: 'response_headers')
+  Map<String, String>? responseHeaders;
+
+  @JsonKey(name: 'request_payload')
+  String? requestPayload;
+
+  @JsonKey(name: 'response_payload')
+  String? responsePayload;
+
   NetworkRequestContext({
     required this.method,
     required this.statusCode,
@@ -376,6 +469,10 @@ class NetworkRequestContext {
     this.statusText,
     this.responseContentLength,
     this.duration = 0,
+    this.requestHeaders,
+    this.responseHeaders,
+    this.requestPayload,
+    this.responsePayload,
   });
 
   static int? _responseContentLengthFromJson(dynamic value) {

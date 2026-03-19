@@ -36,9 +36,10 @@ target 'Runner' do
 # pod 'CoralogixInternal', :path => '../../../cx-ios-sdk'  # assuming it's in the same folder
 
 # TODO: Remove git references once SDK 2.0.0 is available on CocoaPods CDN
-pod 'Coralogix', :git => 'https://github.com/coralogix/cx-ios-sdk', :branch => 'master'
-pod 'CoralogixInternal', :git => 'https://github.com/coralogix/cx-ios-sdk.git', :branch => 'master'
-pod 'SessionReplay', :git => 'https://github.com/coralogix/cx-ios-sdk.git', :branch => 'master'
+# Using feat/hybrid-user-interaction-api for testing; switch to master or a release tag before merging to master
+#pod 'Coralogix', :git => 'https://github.com/coralogix/cx-ios-sdk', :branch => 'feat/hybrid-user-interaction-api'
+#pod 'CoralogixInternal', :git => 'https://github.com/coralogix/cx-ios-sdk.git', :branch => 'feat/hybrid-user-interaction-api'
+#pod 'SessionReplay', :git => 'https://github.com/coralogix/cx-ios-sdk.git', :branch => 'feat/hybrid-user-interaction-api'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 

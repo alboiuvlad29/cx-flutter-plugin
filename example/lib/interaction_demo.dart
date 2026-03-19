@@ -197,7 +197,7 @@ class _InteractionDemoPageState extends State<InteractionDemoPage> {
                     const SizedBox(height: 24),
                     
                     // Scroll Testing Section
-                    _SectionTitle(
+                    const _SectionTitle(
                       icon: Icons.swap_vert,
                       title: 'Scroll Testing',
                       color: Colors.orange,
@@ -246,7 +246,7 @@ class _InteractionDemoPageState extends State<InteractionDemoPage> {
                     const SizedBox(height: 24),
                     
                     // Swipe Testing Section
-                    _SectionTitle(
+                    const _SectionTitle(
                       icon: Icons.swipe,
                       title: 'Swipe Testing',
                       color: Colors.purple,
@@ -275,11 +275,11 @@ class _InteractionDemoPageState extends State<InteractionDemoPage> {
                           padding: const EdgeInsets.only(right: 16),
                           child: const Icon(Icons.archive, color: Colors.white),
                         ),
-                        child: Card(
+                        child: const Card(
                           child: ListTile(
-                            leading: const Icon(Icons.mail),
-                            title: const Text('Swipe me left or right'),
-                            subtitle: const Text('Dismissible widget demo'),
+                            leading: Icon(Icons.mail),
+                            title: Text('Swipe me left or right'),
+                            subtitle: Text('Dismissible widget demo'),
                           ),
                         ),
                       )
@@ -295,7 +295,7 @@ class _InteractionDemoPageState extends State<InteractionDemoPage> {
                     const SizedBox(height: 24),
                     
                     // Manual Interaction Reporting Section
-                    _SectionTitle(
+                    const _SectionTitle(
                       icon: Icons.code,
                       title: 'Manual Reporting',
                       color: Colors.teal,

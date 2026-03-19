@@ -504,6 +504,7 @@ Future<void> verifyLogs(BuildContext context) async {
           context,
           'Error',
           'No session ID available',
+          showCopyButton: true,
         );
       }
       return;
@@ -532,6 +533,7 @@ Future<void> verifyLogs(BuildContext context) async {
           context,
           'Error',
           'Request timed out. Please try again.',
+          showCopyButton: true,
         );
       }
       return;
@@ -542,6 +544,7 @@ Future<void> verifyLogs(BuildContext context) async {
           context,
           'Error',
           'Failed to fetch logs: $e',
+          showCopyButton: true,
         );
       }
       return;
@@ -555,6 +558,7 @@ Future<void> verifyLogs(BuildContext context) async {
         context,
         'Error',
         'Failed to fetch logs: ${response.statusCode} - ${response.reasonPhrase}',
+        showCopyButton: true,
       );
       return;
     }
@@ -565,6 +569,7 @@ Future<void> verifyLogs(BuildContext context) async {
         context,
         'Error',
         'Unexpected response format: expected a list',
+        showCopyButton: true,
       );
       return;
     }
@@ -632,12 +637,14 @@ Future<void> verifyLogs(BuildContext context) async {
         context,
         'Success',
         'All logs are valid! ✅',
+        showCopyButton: true,
       );
     } else {
       _showAlertDialog(
         context,
         'Validation Failed',
         'Some logs failed validation:\n${errorMessages.join('\n')}',
+        showCopyButton: true,
       );
     }
   } catch (error) {
@@ -647,23 +654,44 @@ Future<void> verifyLogs(BuildContext context) async {
         context,
         'Error',
         'Failed to verify logs: $error',
+        showCopyButton: true,
       );
     }
   }
 }
 
-void _showAlertDialog(BuildContext context, String title, String message) {
+void _showAlertDialog(
+  BuildContext context,
+  String title,
+  String message, {
+  bool showCopyButton = false,
+}) {
   showDialog(
     context: context,
-    builder: (BuildContext context) {
+    builder: (BuildContext dialogContext) {
       return AlertDialog(
         title: Text(title),
         content: SingleChildScrollView(
-          child: Text(message),
+          child: SelectableText(message),
         ),
         actions: [
+          if (showCopyButton) ...[
+            TextButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: '$title\n\n$message'));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Copied to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.copy, size: 18),
+              label: const Text('Copy'),
+            ),
+          ],
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('OK'),
           ),
         ],

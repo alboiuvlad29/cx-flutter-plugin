@@ -9,17 +9,7 @@
             "program": "${workspaceFolder}/example/lib/main.dart",
             "flutterMode": "debug",
             "preLaunchTask": "Boot iOS Simulator",
-            "args": []
-        },
-        {
-            "name": "Flutter (Android)",
-            "type": "dart",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/example",
-            "program": "${workspaceFolder}/example/lib/main.dart",
-            "flutterMode": "debug",
-            "preLaunchTask": "Boot Android Emulator",
-            "deviceId": "emulator-5554",
+            "toolArgs": ["-d", "iPhone 16 Pro"],
             "args": []
         },
         {
@@ -30,6 +20,18 @@
             "program": "${workspaceFolder}/example/integration_test/app_e2e_test.dart",
             "flutterMode": "debug",
             "preLaunchTask": "Boot iOS Simulator",
+            "toolArgs": ["-d", "iPhone 16 Pro"],
+            "args": []
+        },
+        {
+            "name": "Flutter (Android)",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/example",
+            "program": "${workspaceFolder}/example/lib/main.dart",
+            "flutterMode": "debug",
+            "preLaunchTask": "Boot Android Emulator",
+            "toolArgs": ["-d", "emulator-5554"],
             "args": []
         },
         {
@@ -40,27 +42,8 @@
             "program": "${workspaceFolder}/example/integration_test/app_e2e_test.dart",
             "flutterMode": "debug",
             "preLaunchTask": "Boot Android Emulator",
-            "deviceId": "emulator-5554"
-        },
-        {
-            "name": "Interaction Tracking Tests (iOS)",
-            "type": "dart",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/example",
-            "program": "${workspaceFolder}/example/integration_test/interaction_tracking_test.dart",
-            "flutterMode": "debug",
-            "preLaunchTask": "Boot iOS Simulator",
+            "toolArgs": ["-d", "emulator-5554"],
             "args": []
-        },
-        {
-            "name": "Interaction Tracking Tests (Android)",
-            "type": "dart",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/example",
-            "program": "${workspaceFolder}/example/integration_test/interaction_tracking_test.dart",
-            "flutterMode": "debug",
-            "preLaunchTask": "Boot Android Emulator",
-            "deviceId": "emulator-5554"
         }
     ]
 }

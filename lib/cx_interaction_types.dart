@@ -65,6 +65,7 @@ class CxInteractionData {
     
     if (elementId != null && elementId!.isNotEmpty) {
       map['element_id'] = elementId;
+      map['target_id'] = elementId; // Android FlutterPluginManager expects target_id
     }
     
     // Only add inner text if it has actual visible text (not icon glyphs)

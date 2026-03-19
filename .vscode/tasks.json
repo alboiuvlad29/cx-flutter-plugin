@@ -4,7 +4,7 @@
         {
             "label": "Boot iOS Simulator",
             "type": "shell",
-            "command": "if xcrun simctl list devices booted | grep -q 'Booted'; then echo 'iOS Simulator already running'; else DEVICE=$(xcrun simctl list devices available | grep -i 'iphone' | head -1 | awk -F'(' '{print $1}' | xargs); if [ -z \"$DEVICE\" ]; then open -a Simulator && echo 'Opening Simulator app...'; else open -a Simulator && sleep 2 && xcrun simctl boot \"$DEVICE\" 2>/dev/null && echo \"Booting $DEVICE...\" || echo 'Simulator booting...'; fi; sleep 3; fi",
+            "command": "if xcrun simctl list devices booted | grep -q 'iPhone 16 Pro'; then echo 'iPhone 16 Pro already running'; else open -a Simulator && sleep 2 && xcrun simctl boot 'iPhone 16 Pro' 2>/dev/null && echo 'Booting iPhone 16 Pro...' || echo 'Simulator booting...'; sleep 3; fi",
             "problemMatcher": [],
             "presentation": {
                 "reveal": "silent",
@@ -14,10 +14,16 @@
         {
             "label": "Boot Android Emulator",
             "type": "shell",
-            "command": "cd ${workspaceFolder}/example && DEVICES=$(flutter devices 2>/dev/null) && if echo \"$DEVICES\" | grep -q 'android'; then echo 'Android emulator already running'; else echo 'Launching Android emulator...' && flutter emulators --launch Medium_Phone_API_35 && echo 'Waiting for emulator to be ready...' && MAX_WAIT=60 && WAITED=0 && while [ $WAITED -lt $MAX_WAIT ]; do DEVICES=$(flutter devices 2>/dev/null) && if echo \"$DEVICES\" | grep -q 'android'; then echo 'Android emulator is ready!'; break; fi; sleep 2; WAITED=$((WAITED + 2)); echo \"Waiting... ($WAITED/$MAX_WAIT seconds)\"; done && DEVICES=$(flutter devices 2>/dev/null) && if ! echo \"$DEVICES\" | grep -q 'android'; then echo 'Warning: Emulator may not be fully ready yet'; fi; fi",
+            "command": "if adb devices | grep -q 'emulator.*device'; then echo '✓ Android emulator is running'; else echo '✗ Android emulator not running. Start it with:' && echo '  emulator -avd Medium_Phone_API_35 &' && echo '' && echo 'Waiting for emulator...' && for i in $(seq 1 60); do adb devices | grep -q 'emulator.*device' && echo '✓ Emulator connected!' && exit 0; sleep 2; done; echo '✗ Timeout: Please start the emulator manually'; exit 1; fi",
+            "options": {
+                "shell": {
+                    "executable": "/bin/zsh",
+                    "args": ["-l", "-c"]
+                }
+            },
             "problemMatcher": [],
             "presentation": {
-                "reveal": "silent",
+                "reveal": "always",
                 "panel": "shared"
             }
         },
@@ -39,7 +45,8 @@
         {
             "label": "Run Integration Tests (Android)",
             "type": "shell",
-            "command": "cd ${workspaceFolder}/example && flutter test integration_test/app_e2e_test.dart -d emulator-5554",
+            "command": "cd ${workspaceFolder}/example && flutter test integration_test/app_e2e_test.dart -d $(adb devices | grep emulator | head -1 | awk '{print $1}')",
+            "dependsOn": ["Boot Android Emulator"],
             "problemMatcher": [],
             "presentation": {
                 "reveal": "always",

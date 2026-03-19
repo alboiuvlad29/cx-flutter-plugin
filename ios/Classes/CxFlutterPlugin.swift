@@ -83,9 +83,9 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
          case "unregisterMaskRegion":
              self.unregisterMaskRegion(call: call, result: result)
         case "getSessionReplayFolderPath":
-             self.getSessionReplayFolderPath(call: call, result: result)
+            self.getSessionReplayFolderPath(call: call, result: result)
         case "setUserInteraction":
-             self.setUserInteraction(call: call, result: result)
+            self.setUserInteraction(call: call, result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -128,14 +128,17 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         do {
-            // Create beforeSendCallback only if parameter["beforeSend"] is not null
-            let beforeSendCallBack: (([[String: Any]]) -> Void)? =
+            // beforeSend is optional: when false, pass nil so the native SDK sends events directly
+            // without platform channel round-trip; when true, events go to Dart for processing then back via sendCxSpanData.
+            let hasBeforeSend = parameters["hasBeforeSend"] as? Bool ?? false
+            let beforeSendCallBack: (([[String: Any]]) -> Void)? = hasBeforeSend ?
                 { [weak self] (event: [[String: Any]]) -> Void in
                     let safePayload = self?.makeJSONSafe(event)
                     DispatchQueue.main.async {
                         self?.eventSink?(safePayload)
                     }
-                  }
+
+                  } : nil
             var options = try self.toCoralogixOptions(parameter: parameters)
             options.beforeSendCallBack = beforeSendCallBack
             let version = parameters["pluginVersion"] as? String ?? ""
@@ -171,8 +174,12 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
             result(FlutterError(code: "4", message: "Arguments is null or empty", details: nil))
             return
         }
-        // TODO: Implement proper SDK integration when iOS SDK exposes public API (CX-33603)
-        result(FlutterError(code: "UNAVAILABLE", message: "SDK integration not available; event not forwarded", details: nil))
+        guard let rum = self.coralogixRum, rum.isInitialized else {
+            result(FlutterError(code: "UNAVAILABLE", message: "SDK not initialized; event not forwarded", details: nil))
+            return
+        }
+        rum.setUserInteraction(arguments)
+        result("setUserInteraction success")
     }
 
     private func setUserContext(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -398,6 +405,11 @@ public class CxFlutterPlugin: NSObject, FlutterPlugin {
                 instrumentationDict[instrumentationKey] = value
             }
         }
+        // Hybrid: always pass false to native. If user enabled userInteraction, Dart does click/scroll/swipe and reports via setUserInteraction to avoid duplicates.
+        if instrumentations["userActions"] == true, parameter["debug"] as? Bool == true {
+            print("[CxFlutterPlugin] userActions overridden to false for native (hybrid mode: Flutter handles interactions)")
+        }
+        instrumentationDict[.userActions] = false
 
         guard let domain = parameter["coralogixDomain"] as? String,
             let coralogixDomain = CoralogixDomain(rawValue: domain)
